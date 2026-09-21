@@ -10,7 +10,6 @@ class MotorHubScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final List<Map<String, dynamic>> menuItems = [
-      {'title': 'Profilim', 'icon': Icons.person, 'color': Colors.blueGrey, 'isReady': true},
       {'title': 'Gezi & Rotalar', 'icon': Icons.alt_route, 'color': Colors.deepOrange, 'isReady': true},
       {'title': 'Buluşma & Tanışma', 'icon': Icons.local_fire_department, 'color': Colors.amber[800], 'isReady': true},
       {'title': 'Kulüpler', 'icon': Icons.groups, 'color': Colors.indigo, 'isReady': true},

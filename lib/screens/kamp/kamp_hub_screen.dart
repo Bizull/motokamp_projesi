@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import '../future_phases/placeholder_screen.dart';
+import 'camp_spots_screen.dart';
+import 'camp_chat_screen.dart';
 
 class KampHubScreen extends StatelessWidget {
   const KampHubScreen({super.key});
@@ -7,16 +8,16 @@ class KampHubScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final List<Map<String, dynamic>> menuItems = [
-      {'title': 'Kamp Alanları (Harita)', 'icon': Icons.terrain, 'color': Colors.green[800]},
-      {'title': 'Ücretsiz / Wild Camp', 'icon': Icons.nature_people, 'color': Colors.lightGreen[700]},
-      {'title': 'Kamp Ekipman Pazarı', 'icon': Icons.storefront, 'color': Colors.brown},
-      {'title': 'Ateş Başı Sohbet', 'icon': Icons.forum, 'color': Colors.orange[800]},
+      {'title': 'Kamp Noktaları & Wild Camp', 'icon': Icons.terrain, 'color': Colors.green[800], 'isReady': true},
+      {'title': 'Ateş Başı Sohbet & Davet', 'icon': Icons.whatshot, 'color': Colors.orange[800], 'isReady': true},
+      {'title': 'Kamp Ekipman Pazarı', 'icon': Icons.storefront, 'color': Colors.grey, 'isReady': false},
+      {'title': 'Kamp Yemekleri & İpuçları', 'icon': Icons.outdoor_grill, 'color': Colors.grey, 'isReady': false},
     ];
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Kamp Dünyası'),
-        backgroundColor: Colors.green[900],
+        backgroundColor: const Color(0xFF1B4332),
         foregroundColor: Colors.white,
       ),
       body: Padding(
@@ -31,36 +32,79 @@ class KampHubScreen extends StatelessWidget {
           ),
           itemBuilder: (context, index) {
             final item = menuItems[index];
+            final bool isReady = item['isReady'] as bool;
+
             return InkWell(
               borderRadius: BorderRadius.circular(16),
               onTap: () {
+                if (!isReady) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text("${item['title']} 2. Fazda açılacak.")),
+                  );
+                  return;
+                }
+
+                Widget target;
+                if (item['title'] == 'Kamp Noktaları & Wild Camp') {
+                  target = const CampSpotsScreen();
+                } else if (item['title'] == 'Ateş Başı Sohbet & Davet') {
+                  target = const CampChatScreen();
+                } else {
+                  return;
+                }
+
                 Navigator.push(
                   context,
-                  MaterialPageRoute(
-                    builder: (context) => PlaceholderScreen(
-                      title: item['title'],
-                      icon: item['icon'],
-                    ),
-                  ),
+                  MaterialPageRoute(builder: (context) => target),
                 );
               },
               child: Card(
-                elevation: 4,
+                elevation: isReady ? 4 : 1,
+                color: isReady ? Colors.white : Colors.grey.shade200,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                child: Stack(
                   children: [
-                    CircleAvatar(
-                      radius: 30,
-                      backgroundColor: (item['color'] as Color).withOpacity(0.15),
-                      child: Icon(item['icon'], size: 32, color: item['color']),
+                    Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          CircleAvatar(
+                            radius: 28,
+                            backgroundColor: (item['color'] as Color).withOpacity(0.15),
+                            child: Icon(item['icon'], size: 30, color: item['color']),
+                          ),
+                          const SizedBox(height: 10),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                            child: Text(
+                              item['title'],
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                                color: isReady ? Colors.black87 : Colors.grey[600],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                    const SizedBox(height: 12),
-                    Text(
-                      item['title'],
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                    ),
+                    if (!isReady)
+                      Positioned(
+                        top: 8,
+                        right: 8,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: Colors.green.shade800,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: const Text(
+                            '2. Faz',
+                            style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ),
                   ],
                 ),
               ),
