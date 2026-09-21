@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'badges_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -9,8 +10,8 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   // Zorunlu Bilgiler
-  String name = 'Demir Süvari';
-  int age = 24;
+  String name = 'Muhammed Emin Dilek';
+  int age = 35;
   String gender = 'Erkek'; // Erkek / Kadın / Belirtmek İstemiyor
   String city = 'Kayseri / Aksaray';
 
@@ -19,6 +20,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String ridingLevel = 'İleri Düzey (Enduro & Viraj)'; // Başlangıç / Orta / İleri
   String campingExp = 'Deneyimli (Kış Kampı & Çadır)'; // Az / Orta / Deneyimli
   String bio = 'Rüzgar nereye biz oraya. Hafta sonları çadır ve viraj peşindeyiz.';
+  Widget _buildMiniBadge(IconData icon, String label, Color color) {
+  return Column(
+    children: [
+      CircleAvatar(
+        radius: 20,
+        backgroundColor: color.withOpacity(0.15),
+        child: Icon(icon, size: 20, color: color),
+      ),
+      const SizedBox(height: 4),
+      Text(label, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600)),
+    ],
+  );
+}
 
   void _editProfileDialog() {
     final nameController = TextEditingController(text: name);
@@ -228,6 +242,55 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     _buildInfoRow(Icons.speed, 'Sürüş Yetkinliği', ridingLevel),
                     const SizedBox(height: 10),
                     _buildInfoRow(Icons.cabin, 'Kamp Tecrübesi', campingExp),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 14),
+
+            // Rozet Vitrini Kartı
+            Card(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              elevation: 2,
+              child: Padding(
+                padding: const EdgeInsets.all(14.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(Icons.shield, color: Colors.amber, size: 22),
+                            const SizedBox(width: 8),
+                            const Text(
+                              'Seviye 3: Yol Dostu',
+                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                            ),
+                          ],
+                        ),
+                        TextButton(
+                          style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => const BadgesScreen()),
+                            );
+                          },
+                          child: const Text('Tümünü Gör (6)', style: TextStyle(fontSize: 12)),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        _buildMiniBadge(Icons.local_fire_department, 'İlk Ateş', Colors.deepOrange),
+                        _buildMiniBadge(Icons.handshake, 'Kaynaşma', Colors.amber),
+                        _buildMiniBadge(Icons.groups, 'Sosyallik', Colors.teal),
+                      ],
+                    ),
                   ],
                 ),
               ),
