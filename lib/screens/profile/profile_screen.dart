@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'badges_screen.dart';
+import '../../services/api_service.dart';
+import 'badges_screen.dart'; 
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -9,333 +10,418 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  // Zorunlu Bilgiler
-  String name = 'Muhammed Emin Dilek';
-  int age = 35;
-  String gender = 'Erkek'; // Erkek / Kadın / Belirtmek İstemiyor
-  String city = 'Kayseri / Aksaray';
+  Map<String, dynamic>? userData;
+  bool isLoading = true;
+  final String currentUsername = 'demursuvari'; // Varsayılan oturum açmış kullanıcı
 
-  // Opsiyonel (Keyfi) Bilgiler
-  String bike = 'Yamaha Tenere 700';
-  String ridingLevel = 'İleri Düzey (Enduro & Viraj)'; // Başlangıç / Orta / İleri
-  String campingExp = 'Deneyimli (Kış Kampı & Çadır)'; // Az / Orta / Deneyimli
-  String bio = 'Rüzgar nereye biz oraya. Hafta sonları çadır ve viraj peşindeyiz.';
-  Widget _buildMiniBadge(IconData icon, String label, Color color) {
-  return Column(
-    children: [
-      CircleAvatar(
-        radius: 20,
-        backgroundColor: color.withOpacity(0.15),
-        child: Icon(icon, size: 20, color: color),
-      ),
-      const SizedBox(height: 4),
-      Text(label, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600)),
-    ],
-  );
-}
+  @override
+  void initState() {
+    super.initState();
+    _loadProfile();
+  }
 
-  void _editProfileDialog() {
-    final nameController = TextEditingController(text: name);
-    final ageController = TextEditingController(text: age.toString());
-    final cityController = TextEditingController(text: city);
-    final bikeController = TextEditingController(text: bike);
-    final bioController = TextEditingController(text: bio);
+  Future<void> _loadProfile() async {
+    setState(() => isLoading = true);
+    final data = await ApiService.fetchUserProfile(currentUsername);
+    setState(() {
+      userData = data;
+      isLoading = false;
+    });
+  }
 
-    String tempGender = gender;
-    String tempRidingLevel = ridingLevel;
-    String tempCampingExp = campingExp;
+  void _showAddReviewDialog() {
+    final commentController = TextEditingController();
+    int selectedScore = 5;
+    String selectedActivity = 'Ortak Sürüş';
 
     showDialog(
       context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          title: const Text('Profili Düzenle'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'ZORUNLU BİLGİLER (*)',
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.deepOrange),
-                ),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: nameController,
-                  decoration: const InputDecoration(labelText: 'Ad Soyad / Lakap *'),
-                ),
-                TextField(
-                  controller: ageController,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: 'Yaş *'),
-                ),
-                DropdownButtonFormField<String>(
-                  value: tempGender,
-                  decoration: const InputDecoration(labelText: 'Cinsiyet *'),
-                  items: const [
-                    DropdownMenuItem(value: 'Erkek', child: Text('Erkek')),
-                    DropdownMenuItem(value: 'Kadın', child: Text('Kadın')),
-                    DropdownMenuItem(value: 'Belirtmek İstemiyor', child: Text('Belirtmek İstemiyor')),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              title: const Row(
+                children: [
+                  Icon(Icons.verified_user, color: Colors.green),
+                  SizedBox(width: 8),
+                  Text('Güven Değerlendirmesi Yap', style: TextStyle(fontSize: 18)),
+                ],
+              ),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Puan (1 - 5):', style: TextStyle(fontWeight: FontWeight.bold)),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: List.generate(5, (index) {
+                        return IconButton(
+                          icon: Icon(
+                            index < selectedScore ? Icons.star : Icons.star_border,
+                            color: Colors.amber,
+                            size: 32,
+                          ),
+                          onPressed: () {
+                            setDialogState(() => selectedScore = index + 1);
+                          },
+                        );
+                      }),
+                    ),
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<String>(
+                      value: selectedActivity,
+                      decoration: const InputDecoration(
+                        labelText: 'Nerede / Nasıl Tanıştınız?',
+                        border: OutlineInputBorder(),
+                      ),
+                      items: ['Ortak Sürüş', 'Kamp Ateşi', 'Yol Yardımı', 'Ekipman Paylaşımı']
+                          .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+                          .toList(),
+                      onChanged: (val) {
+                        if (val != null) setDialogState(() => selectedActivity = val);
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: commentController,
+                      maxLines: 3,
+                      decoration: const InputDecoration(
+                        labelText: 'Değerlendirmeniz / Referans Notunuz',
+                        hintText: 'Örn: Gece sürüşünde arkada artçı desteği sağladı, son derece güvenilir bir sürücü.',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
                   ],
-                  onChanged: (val) => setDialogState(() => tempGender = val!),
                 ),
-                TextField(
-                  controller: cityController,
-                  decoration: const InputDecoration(labelText: 'Şehir *'),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('İptal'),
                 ),
-                const SizedBox(height: 20),
-                const Text(
-                  'KEYFİ DETAYLAR (İsteğe Bağlı)',
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.blueGrey),
-                ),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: bikeController,
-                  decoration: const InputDecoration(labelText: 'Motosiklet Modeli'),
-                ),
-                DropdownButtonFormField<String>(
-                  value: tempRidingLevel,
-                  decoration: const InputDecoration(labelText: 'Sürüş Seviyesi'),
-                  items: const [
-                    DropdownMenuItem(value: 'Başlangıç', child: Text('Başlangıç')),
-                    DropdownMenuItem(value: 'Orta Düzey', child: Text('Orta Düzey')),
-                    DropdownMenuItem(value: 'İleri Düzey (Enduro & Viraj)', child: Text('İleri Düzey (Enduro & Viraj)')),
-                  ],
-                  onChanged: (val) => setDialogState(() => tempRidingLevel = val!),
-                ),
-                DropdownButtonFormField<String>(
-                  value: tempCampingExp,
-                  decoration: const InputDecoration(labelText: 'Kamp Tecrübesi'),
-                  items: const [
-                    DropdownMenuItem(value: 'Yeni Başlayan', child: Text('Yeni Başlayan')),
-                    DropdownMenuItem(value: 'Orta (Yaz Kampçısı)', child: Text('Orta (Yaz Kampçısı)')),
-                    DropdownMenuItem(value: 'Deneyimli (Kış Kampı & Çadır)', child: Text('Deneyimli (Kış Kampı & Çadır)')),
-                  ],
-                  onChanged: (val) => setDialogState(() => tempCampingExp = val!),
-                ),
-                TextField(
-                  controller: bioController,
-                  maxLines: 2,
-                  decoration: const InputDecoration(labelText: 'Hakkımda / Biyografi'),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFD9531E), foregroundColor: Colors.white),
+                  onPressed: () async {
+                    if (commentController.text.trim().isEmpty) return;
+
+                    // Test amacıyla başka bir kullanıcı adı (misafir) üzerinden mevcut kullanıcıya güven puanı gönderiyoruz
+                    final success = await ApiService.submitTrustReview(
+                      reviewerUsername: 'yolcusu_${DateTime.now().millisecond}',
+                      targetUsername: currentUsername,
+                      score: selectedScore,
+                      comment: commentController.text.trim(),
+                      activity: selectedActivity,
+                    );
+
+                    Navigator.pop(context);
+                    if (success) {
+                      _loadProfile();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Güven puanı kaydedildi!')),
+                      );
+                    }
+                  },
+                  child: const Text('Puanı Kaydet'),
                 ),
               ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('İptal'),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.deepOrange, foregroundColor: Colors.white),
-              onPressed: () {
-                if (nameController.text.isEmpty || ageController.text.isEmpty || cityController.text.isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Lütfen zorunlu alanları (*) doldurunuz.')),
-                  );
-                  return;
-                }
-                setState(() {
-                  name = nameController.text;
-                  age = int.tryParse(ageController.text) ?? age;
-                  gender = tempGender;
-                  city = cityController.text;
-                  bike = bikeController.text;
-                  ridingLevel = tempRidingLevel;
-                  campingExp = tempCampingExp;
-                  bio = bioController.text;
-                });
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Profil başarıyla güncellendi!')),
-                );
-              },
-              child: const Text('Kaydet'),
-            ),
-          ],
-        ),
-      ),
+            );
+          },
+        );
+      },
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    if (isLoading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator(color: Color(0xFFD9531E))),
+      );
+    }
+
+    final trustStats = userData?['trustStats'] ?? {};
+    final String avgScore = trustStats['averageScore']?.toString() ?? 'Yeni';
+    final int totalReviews = trustStats['totalReviews'] ?? 0;
+    final List reviews = trustStats['reviews'] ?? [];
+
     return Scaffold(
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
-        title: const Text('Motorcu Profili'),
-        backgroundColor: Colors.blueGrey[900],
+        title: const Text('Sürücü Profili'),
+        backgroundColor: const Color(0xFFD9531E),
         foregroundColor: Colors.white,
         actions: [
           IconButton(
-            icon: const Icon(Icons.edit),
-            onPressed: _editProfileDialog,
-            tooltip: 'Profili Düzenle',
+            icon: const Icon(Icons.refresh),
+            onPressed: _loadProfile,
           ),
         ],
       ),
+      floatingActionButton: FloatingActionButton.extended(
+        backgroundColor: Colors.green[700],
+        foregroundColor: Colors.white,
+        icon: const Icon(Icons.rate_review),
+        label: const Text('Güven Puanı Ver (Test)'),
+        onPressed: _showAddReviewDialog,
+      ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            // Profil Başlığı
-            Center(
-              child: Stack(
-                children: [
-                  CircleAvatar(
-                    radius: 46,
-                    backgroundColor: Colors.deepOrange.shade100,
-                    child: const Icon(Icons.two_wheeler, size: 50, color: Colors.deepOrange),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              name,
-              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 4),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text('$age Yaş • $gender', style: TextStyle(color: Colors.grey[700], fontSize: 13)),
-                const SizedBox(width: 8),
-                const Icon(Icons.location_on, size: 14, color: Colors.deepOrange),
-                Text(city, style: TextStyle(color: Colors.grey[700], fontSize: 13)),
-              ],
-            ),
-            const SizedBox(height: 12),
-            if (bio.isNotEmpty)
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey.shade200),
-                ),
-                child: Text(
-                  bio,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(fontStyle: FontStyle.italic, color: Colors.black87, fontSize: 13),
+            // 1. Profil Başlık Kartı
+            Card(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              elevation: 3,
+              child: Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: Column(
+                  children: [
+                    const CircleAvatar(
+                      radius: 44,
+                      backgroundColor: Color(0xFFFDE8E1),
+                      child: Icon(Icons.two_wheeler, size: 48, color: Color(0xFFD9531E)),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      userData?['fullName'] ?? 'Demir Süvari',
+                      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                    ),
+                    Text(
+                      '@${userData?['username'] ?? 'demursuvari'}',
+                      style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      userData?['bio'] ?? '',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Colors.grey[800]),
+                    ),
+                    const Divider(height: 30),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        _buildProfileInfo(Icons.motorcycle, userData?['motorcycle'] ?? '-'),
+                        _buildProfileInfo(Icons.location_on, userData?['city'] ?? '-'),
+                        _buildProfileInfo(Icons.bloodtype, userData?['bloodType'] ?? '-', iconColor: Colors.red),
+                      ],
+                    ),
+                  ],
                 ),
               ),
+            ),
             const SizedBox(height: 16),
 
-            // Keyfi/Opsiyonel Bilgilerin Gösterimi (Rozet/Bilgi Kartları)
+            // 2. GÜVEN PUANI VE GÜVENİLİRLİK SKOR KARTI
             Card(
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              color: Colors.white,
               elevation: 2,
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Sürüş & Kamp Yetkinlikleri',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                    Row(
+                      children: [
+                        const Icon(Icons.verified, color: Colors.blueAccent, size: 28),
+                        const SizedBox(width: 8),
+                        const Text(
+                          'Topluluk Güven Puanı',
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                        ),
+                        const Spacer(),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.green.shade50,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.green.shade300),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.star, color: Colors.amber, size: 18),
+                              const SizedBox(width: 4),
+                              Text(
+                                '$avgScore / 5.0',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.green.shade900,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
-                    const Divider(height: 20),
-                    _buildInfoRow(Icons.two_wheeler, 'Motosiklet', bike.isEmpty ? 'Girilmedi' : bike),
                     const SizedBox(height: 10),
-                    _buildInfoRow(Icons.speed, 'Sürüş Yetkinliği', ridingLevel),
-                    const SizedBox(height: 10),
-                    _buildInfoRow(Icons.cabin, 'Kamp Tecrübesi', campingExp),
+                    Text(
+                      'Bu sürücü $totalReviews kamp/sürüş arkadaşı tarafından doğrulandı ve değerlendirildi.',
+                      style: TextStyle(color: Colors.grey[700], fontSize: 13),
+                    ),
                   ],
                 ),
               ),
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: 16),
 
-            // Rozet Vitrini Kartı
+
+            //---------Rozetler Kartı----------
             Card(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              elevation: 2,
-              child: Padding(
-                padding: const EdgeInsets.all(14.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                elevation: 2,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(16),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const BadgesScreen()),
+                    );
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
                       children: [
                         Row(
                           children: [
-                            const Icon(Icons.shield, color: Colors.amber, size: 22),
-                            const SizedBox(width: 8),
-                            const Text(
-                              'Seviye 3: Yol Dostu',
-                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors.amber.shade100,
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(Icons.military_tech, color: Colors.amber, size: 26),
+                            ),
+                            const SizedBox(width: 12),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Seviye ${userData?['level'] ?? 1} Yol Gezgini',
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                                ),
+                                Text(
+                                  '${userData?['xp'] ?? 120} / 500 XP',
+                                  style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                                ),
+                              ],
+                            ),
+                            const Spacer(),
+                            Row(
+                              children: [
+                                Text(
+                                  'Rozetler',
+                                  style: TextStyle(color: Colors.grey[700], fontSize: 13, fontWeight: FontWeight.w500),
+                                ),
+                                const Icon(Icons.chevron_right, color: Colors.grey),
+                              ],
                             ),
                           ],
                         ),
-                        TextButton(
-                          style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (context) => const BadgesScreen()),
-                            );
-                          },
-                          child: const Text('Tümünü Gör (6)', style: TextStyle(fontSize: 12)),
+                        const SizedBox(height: 12),
+                        // İlerleme Çubuğu (XP Bar)
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: LinearProgressIndicator(
+                            value: ((userData?['xp'] ?? 120) / 500).clamp(0.0, 1.0),
+                            backgroundColor: Colors.grey[200],
+                            valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFFD9531E)),
+                            minHeight: 6,
+                          ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 10),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: [
-                        _buildMiniBadge(Icons.local_fire_department, 'İlk Ateş', Colors.deepOrange),
-                        _buildMiniBadge(Icons.handshake, 'Kaynaşma', Colors.amber),
-                        _buildMiniBadge(Icons.groups, 'Sosyallik', Colors.teal),
-                      ],
-                    ),
-                  ],
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 14),
+              const SizedBox(height: 16),
 
-            // Aktivite Özeti
-            Card(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              elevation: 2,
-              child: Column(
-                children: [
-                  ListTile(
-                    leading: const Icon(Icons.local_fire_department, color: Colors.amber),
-                    title: const Text('Yaktığım Ateşler'),
-                    trailing: const Text('3 Kez', style: TextStyle(fontWeight: FontWeight.bold)),
-                  ),
-                  const Divider(height: 1),
-                  ListTile(
-                    leading: const Icon(Icons.alt_route, color: Colors.deepOrange),
-                    title: const Text('Kaydedilen Rotalar'),
-                    trailing: const Text('5 Rota', style: TextStyle(fontWeight: FontWeight.bold)),
-                  ),
-                ],
+            // 3. GELEN GÜVEN DEĞERLENDİRMELERİ LİSTESİ
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'Sürüş & Kamp Referansları ($totalReviews)',
+                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
               ),
             ),
+            const SizedBox(height: 8),
+
+            reviews.isEmpty
+                ? const Card(
+                    child: Padding(
+                      padding: EdgeInsets.all(16.0),
+                      child: Center(
+                        child: Text(
+                          'Henüz referans yorumu eklenmemiş.\nSağ alttaki yeşil butona basarak ilk referansı siz ekleyin!',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: Colors.grey),
+                        ),
+                      ),
+                    ),
+                  )
+                : ListView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: reviews.length,
+                    itemBuilder: (context, index) {
+                      final rev = reviews[index];
+                      return Card(
+                        margin: const EdgeInsets.only(bottom: 10),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        child: ListTile(
+                          leading: CircleAvatar(
+                            backgroundColor: Colors.blue.shade50,
+                            child: const Icon(Icons.person, color: Colors.blueAccent),
+                          ),
+                          title: Row(
+                            children: [
+                              Text(
+                                rev['reviewer']?['username'] ?? 'Gezgin',
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                              ),
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: Colors.orange.shade50,
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Text(
+                                  rev['activity'] ?? 'Sürüş',
+                                  style: TextStyle(fontSize: 10, color: Colors.orange.shade900),
+                                ),
+                              ),
+                              const Spacer(),
+                              ...List.generate(
+                                rev['score'] ?? 5,
+                                (i) => const Icon(Icons.star, color: Colors.amber, size: 14),
+                              ),
+                            ],
+                          ),
+                          subtitle: Padding(
+                            padding: const EdgeInsets.only(top: 4.0),
+                            child: Text(rev['comment'] ?? ''),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+            const SizedBox(height: 60),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildInfoRow(IconData icon, String label, String value) {
+  Widget _buildProfileInfo(IconData icon, String text, {Color? iconColor}) {
     return Row(
       children: [
-        Icon(icon, size: 20, color: Colors.blueGrey),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(label, style: TextStyle(fontSize: 11, color: Colors.grey[600])),
-              Text(value, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-            ],
-          ),
+        Icon(icon, size: 18, color: iconColor ?? const Color(0xFFD9531E)),
+        const SizedBox(width: 6),
+        Text(
+          text,
+          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
         ),
       ],
     );

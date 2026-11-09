@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'home_screen.dart';
+import 'home_screen.dart'; // O iki büyük butonun olduğu mevcut ekranın
+import 'explore/camp_map_screen.dart';
 import 'profile/profile_screen.dart';
-import 'profile/badges_screen.dart';
 
 class MainNavigationScreen extends StatefulWidget {
   const MainNavigationScreen({super.key});
@@ -13,68 +13,42 @@ class MainNavigationScreen extends StatefulWidget {
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
   int _currentIndex = 0;
 
-  // Keşfet sekmesinin içindeki sayfa geçişlerini yönetecek anahtar
-  final GlobalKey<NavigatorState> _exploreNavigatorKey = GlobalKey<NavigatorState>();
+  final List<Widget> _screens = [
+    const HomeScreen(),      // 1. Sekme: Ana Sayfa (Motor & Kamp Dünyası butonları)
+    const CampMapScreen(),   // 2. Sekme: Harita & Rota
+    const ProfileScreen(),   // 3. Sekme: Profil & Rozetler
+  ];
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      // Android geri tuşuna basıldığında uygulamadan çıkmak yerine bir önceki iç ekrana dön
-      onWillPop: () async {
-        final isFirstRouteInCurrentTab = !await _exploreNavigatorKey.currentState!.maybePop();
-        return isFirstRouteInCurrentTab;
-      },
-      child: Scaffold(
-        body: IndexedStack(
-          index: _currentIndex,
-          children: [
-            // 1. Sekme: Kendi içinde gezinme desteği olan Keşfet
-            Navigator(
-              key: _exploreNavigatorKey,
-              onGenerateRoute: (routeSettings) {
-                return MaterialPageRoute(
-                  builder: (context) => const HomeScreen(),
-                );
-              },
-            ),
-
-            // 2. Sekme: Rozetler
-            const BadgesScreen(),
-
-            // 3. Sekme: Profilim
-            const ProfileScreen(),
-          ],
-        ),
-        bottomNavigationBar: NavigationBar(
-          selectedIndex: _currentIndex,
-          onDestinationSelected: (index) {
-            // Eğer zaten Keşfet sekmesindeyken tekrar Keşfet'e basarsa en başa (Motor & Kamp kartlarına) dönsün
-            if (index == 0 && _currentIndex == 0) {
-              _exploreNavigatorKey.currentState?.popUntil((route) => route.isFirst);
-            }
-            setState(() {
-              _currentIndex = index;
-            });
-          },
-          indicatorColor: Colors.deepOrange.shade100,
-          destinations: const [
-            NavigationDestination(
-              icon: Icon(Icons.explore_outlined),
-              selectedIcon: Icon(Icons.explore, color: Colors.deepOrange),
-              label: 'Keşfet',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.shield_outlined),
-              selectedIcon: Icon(Icons.shield, color: Colors.amber),
-              label: 'Rozetler',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.person_outline),
-              selectedIcon: Icon(Icons.person, color: Colors.blueGrey),
-              label: 'Profilim',
-            ),
-          ],
-        ),
+    return Scaffold(
+      body: IndexedStack(
+        index: _currentIndex,
+        children: _screens,
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _currentIndex,
+        onTap: (index) => setState(() => _currentIndex = index),
+        selectedItemColor: const Color(0xFFD9531E),
+        unselectedItemColor: Colors.grey,
+        type: BottomNavigationBarType.fixed,
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home_outlined),
+            activeIcon: Icon(Icons.home),
+            label: 'Ana Sayfa',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.map_outlined),
+            activeIcon: Icon(Icons.map),
+            label: 'Harita',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person_outline),
+            activeIcon: Icon(Icons.person),
+            label: 'Profilim',
+          ),
+        ],
       ),
     );
   }

@@ -1,4 +1,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    
+    <!-- İNTERNET İZNİ (Harita ve Backend için Zorunlu) -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+
     <application
         android:label="motokamp_projesi"
         android:name="${applicationName}"
